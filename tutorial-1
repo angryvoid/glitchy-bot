@@ -1,0 +1,66 @@
+import discord 
+from discord.ext import commands # importing commands from discord extensions
+import logging #importing logging to log the content of what's happening here
+from dotenv import load_dotenv # load environmnent variable file (env) that we defined
+import os # allows us to access variable
+
+
+load_dotenv() # loads current environment variable file
+token = os.getenv('DISCORD_TOKEN')
+
+# set up basic logging
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+intents = discord.Intents.default()
+    # every single permission will be incl in one of these intents
+intents.message_content = True
+intents.members = True
+
+# set up for command preset
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+secret_role = "testers"
+
+
+# handling events
+# when the bot is ready
+# when a new member joins the server
+# when a message is received
+
+@bot.event
+async def on_ready():
+    print(f"Are you ready to join the abyss, {bot.user.name}?")
+
+@bot.event
+async def on_member_join(member):
+    await member.send(f"Welcome to the abyss, {member.name}!")
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    
+    if "fish" in message.content.lower():
+        await message.delete()
+        await message.channel.send(f"{message.author.mention} - we no have fish yet")
+
+    await bot.process_commands(message) # allows us to continue handling all other messages sent in server by anyone else
+
+# adding commands
+
+# !hello
+@bot.command()
+async def hello(ctx): # ctx = context
+    await ctx.send(f"Hello {ctx.author.mention}!")
+
+# assign/remove roles
+@bot.command()
+async def assign(ctx):
+    role = discord.utils.get(ctx.guild.roles, name=secret_role)
+    if role:
+        await ctx.author.add_roles(role)
+        await ctx.send(f"{ctx.author.mention} is now assigned to {secret_role}")
+    else:
+        await ctx.send("Role doesn't exist")
+
+# run the bot
+bot.run(token, log_handler=handler, log_level=logging.DEBUG)
